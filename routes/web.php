@@ -4,11 +4,24 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\MenuController;
 use App\Http\Controllers\Web\StudentPortalController;
+use App\Http\Controllers\Auth\VendorRegisterController; // <-- Added for SaaS Canteen Onboarding
 
 // 1. PUBLIC LANDING ENTRYWAY
 Route::get('/', function () {
     return view('welcome');
 });
+
+/*
+|--------------------------------------------------------------------------
+| PUBLIC SAAS VENDOR ONBOARDING ROUTES
+|--------------------------------------------------------------------------
+
+*/
+Route::get('/register', [VendorRegisterController::class, 'showRegistrationForm'])->name('register');
+Route::post('/register', [VendorRegisterController::class, 'register'])->name('register.store');
+
+Route::get('/vendor/register', [VendorRegisterController::class, 'showRegistrationForm'])->name('vendor.register');
+Route::post('/vendor/onboarding', [VendorRegisterController::class, 'register']);
 
 // 2. AUTHENTICATED SYSTEM BOUNDARY (All users must be logged in)
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -88,3 +101,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('student.cart');
 
 });
+
+// // 3. LARAVEL BREEZE DEFAULT AUTHENTICATION
+// // This pulls in all your default login, logout, and password reset logic
+// require __DIR__.'/auth.php';

@@ -13,7 +13,7 @@ class Canteen extends Model
     protected $fillable = [
         'name',
         'location',
-        'operating_hours',
-        'is_open',
+        'status',
+        'operating_hours'
     ];
 }

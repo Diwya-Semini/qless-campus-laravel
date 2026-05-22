@@ -1,86 +1,61 @@
 <?php
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderItem;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Str; 
-use Illuminate\Support\Facades\Mail;
-use App\Mail\OrderReceipt;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
-    /**
-     * Receive a new order from the Student Mobile App.
-     */
     public function store(Request $request)
     {
-        // 1. Validate using column names
-        $request->validate([
-            'canteen_id' => 'required|integer',
-            'total_amount' => 'required|numeric',
-            'items' => 'required|array',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|integer|min:1',
-        ]);
+        // Start a strict database transaction
+        DB::beginTransaction();
 
         try {
-            DB::beginTransaction();
+            // 1. Generate the daily queue and secure ticket number
+            // Counts how many orders were placed today and adds 1 for the queue position
+            $queueNumber = Order::whereDate('created_at', today())->count() + 1; 
+            $ticketNumber = rand(1000, 9999); 
 
-            // 2. Generate a random Queue num
-            $queueNumber = 'Q-' . rand(100, 999);
-
-            // 3. Create the order using table structure
+            // 2. Create the Main Order (The Receipt)
             $order = Order::create([
-                'user_id' => $request->user()->id, 
-                'canteen_id' => $request->canteen_id,
+                'user_id'      => auth()->id(),
+                'canteen_id'   => $request->canteen_id ?? 1, // Fallback to 1 if single tenant
                 'total_amount' => $request->total_amount,
                 'queue_number' => $queueNumber,
-                'status' => 'pending',
+                'ticket_number'=> $ticketNumber,
+                'status'       => 'pending',
             ]);
 
-            // 4. Save the individual food items 
+            // 3. Loop through the Flutter Cart and save the individual items
             foreach ($request->items as $item) {
                 OrderItem::create([
-                    'order_id' => $order->id,
+                    'order_id'   => $order->id,
                     'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
+                    'quantity'   => $item['quantity'],
+                    'subtotal'   => $item['subtotal'],
                 ]);
             }
 
+            // 4. Commit the transaction (Saves everything permanently)
             DB::commit();
 
             return response()->json([
                 'message' => 'Order placed successfully!',
-                'queue_number' => $queueNumber,
-                'order_id' => $order->id
+                'order'   => $order
             ], 201);
 
         } catch (\Exception $e) {
+            // If ANYTHING fails, delete the partial data to prevent errors
             DB::rollBack();
+            
             return response()->json([
-                'message' => 'Failed to place order.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function index(Reqest $request){
-        try{
-            // get all order of the logged in user
-            $orders = Order::where('user_id', $request->user()->id)
-               ->with('items.product')
-               ->orderBy('created_at', 'desc')
-               ->get();
-               
-            return response()->json([
-                'orders' => $orders
-            ], 200);
-        }catch(\Exception $e){
-            return response()->json([
-                'message' => 'Failed to fetch orders.',
-                'error' => $e->getMessage()
+                'message' => 'Failed to process checkout.',
+                'error'   => $e->getMessage()
             ], 500);
         }
     }

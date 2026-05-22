@@ -9,6 +9,17 @@
 <body class="bg-[#0f0f12] text-gray-100 font-sans antialiased min-h-screen flex items-center justify-center p-6">
 
     <div class="w-full max-w-md bg-[#16161a] border border-gray-800 rounded-3xl p-8 shadow-2xl">
+        @if (session('status'))
+            <div class="mb-4 bg-green-950/40 border border-green-800 text-green-400 p-4 rounded-xl text-sm animate-pulse">
+                {{ session('status') }}
+            </div>
+        @endif
+
+        @if (session('success'))
+            <div class="mb-4 bg-green-950/40 border border-green-800 text-green-400 p-4 rounded-xl text-sm">
+                {{ session('success') }}
+            </div>
+        @endif
         
         <div class="text-center mb-8 group">
             <div class="flex items-center justify-center gap-2 mb-2">
@@ -59,15 +70,15 @@
             <button type="submit" class="w-full bg-[#ff5722] hover:bg-[#e64a19] text-white font-bold py-3 px-4 rounded-xl transition duration-300 shadow-lg shadow-orange-500/20">
                 Log In
             </button>
+
+            <div class="mt-6 text-center text-sm border-t border-gray-800/60 pt-4">
+            <span class="text-gray-500">Want to join the marketplace?</span>
+            <a href="/vendor/register" class="text-orange-500 hover:text-orange-400 font-semibold transition ml-1">
+                Register Your Canteen →
+            </a>
+        </div>
         </form>
 
-        @if (Route::has('register'))
-            <div class="mt-6 text-center text-sm text-gray-500">
-                Don't have an account? 
-                <a href="{{ route('register') }}" class="text-orange-500 hover:text-white transition font-medium">Register here</a>
-            </div>
-        @endif
-        
     </div>
 
 </body>
