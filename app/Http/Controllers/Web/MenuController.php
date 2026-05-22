@@ -8,58 +8,104 @@ use Illuminate\Http\Request;
 
 class MenuController extends Controller
 {
-    public function index()
+    /**
+     * Display the complete campus menu grid.
+     */
+    public function index(Request $request)
     {
-        $products = Product::latest()->get();
-        return view('menu', compact('products'));
+        // Simply query all products in the database!
+        $query = Product::query();
+
+        // Handle the live search bar
+        if ($request->has('search')) {
+            $query->where('item_name', 'like', '%' . $request->search . '%');
+        }
+
+        $products = $query->orderBy('category', 'asc')->get();
+
+        return view('canteen_manager.menu.index', compact('products'));
     }
 
+    /**
+     * Show the form for creating a new menu item.
+     */
+    public function create()
+    {
+        return view('canteen_manager.menu.create');
+    }
+
+    /**
+     * Store a newly created menu item in the database.
+     */
     public function store(Request $request)
     {
-        // Zero-Error Validation
         $request->validate([
-            'item_name' => 'required|string|max:255',
-            'category' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'image_url' => 'nullable|string|max:2048', // NEW: Allow an optional URL
+            'item_name'   => 'required|string|max:255',
+            'price'       => 'required|numeric|min:0',
+            'description' => 'nullable|string',
+            'image_url'   => 'nullable|url', 
+            'category'    => 'required|string',
         ]);
 
-        // Create the product in the database
         Product::create([
-            'canteen_id' => 1,
-            'item_name' => $request->item_name,
-            'category' => $request->category,
-            'price' => $request->price,
-            'image_url' => $request->image_url, // NEW: Save the URL to the database
-            'is_available' => $request->has('is_available'),
+            'item_name'   => $request->item_name,
+            'price'       => $request->price,
+            'description' => $request->description,
+            'image_url'   => $request->image_url,
+            'category'    => $request->category,
+            'isAvailable' => $request->has('isAvailable'), 
+            // Removed canteen_id entirely!
         ]);
 
-        return redirect()->route('menu.index');
+        return redirect()->route('menu.index')->with('success', 'Dish added successfully!');
     }
 
-    public function edit(Product $product)
+    /**
+     * Show the form for editing the specified menu item.
+     */
+    public function edit($id)
     {
-        // Laravel automatically finds the product by its ID in the URL
-        return view('menu-edit', compact('product'));
+        // Just find the product directly by its ID
+        $product = Product::findOrFail($id);
+
+        return view('canteen_manager.menu.edit', compact('product'));
     }
 
-    public function update(Request $request, Product $product)
+    /**
+     * Update the specified menu item in storage.
+     */
+    public function update(Request $request, $id)
     {
+        $product = Product::findOrFail($id);
+
         $request->validate([
-            'item_name' => 'required|string|max:255',
-            'category' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'image_url' => 'nullable|string|max:2048',
+            'item_name'   => 'required|string|max:255',
+            'price'       => 'required|numeric|min:0',
+            'description' => 'nullable|string',
+            'image_url'   => 'nullable|url',
+            'category'    => 'required|string',
         ]);
 
         $product->update([
-            'item_name' => $request->item_name,
-            'category' => $request->category,
-            'price' => $request->price,
-            'image_url' => $request->image_url,
-            'is_available' => $request->has('is_available'),
+            'item_name'   => $request->item_name,
+            'price'       => $request->price,
+            'description' => $request->description,
+            'image_url'   => $request->image_url,
+            'category'    => $request->category,
+            'isAvailable' => $request->has('isAvailable'),
         ]);
 
-        return redirect()->route('menu.index');
+        return redirect()->route('menu.index')->with('success', 'Dish updated successfully!');
+    }
+
+    /**
+     * Remove the specified menu item from storage.
+     */
+    public function destroy($id)
+    {
+        $product = Product::findOrFail($id);
+        $product->delete();
+
+        return redirect()->route('menu.index')->with('success', 'Dish deleted from catalog!');
     }
 }

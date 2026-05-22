@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Mail;
 
 use App\Models\Order;
@@ -13,23 +12,25 @@ class OrderReceipt extends Mailable
 {
     use Queueable, SerializesModels;
 
-    // We pass the Order model in so the email knows the ticket number
-    public function __construct(public Order $order)
+    // make the order data available to email template
+    public $order;
+
+    public function __construct(Order $order)
     {
+        $this->order = $order;
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Q-Less Campus: Your Ticket is ' . $this->order->queue_number,
+            subject: 'Your Q-Less Canteen Receipt & Ticket',
         );
     }
 
     public function content(): Content
     {
-        // This points directly to the HTML file we just created
         return new Content(
-            view: 'emails.receipt',
+            markdown: 'emails.orders.receipt',
         );
     }
 }

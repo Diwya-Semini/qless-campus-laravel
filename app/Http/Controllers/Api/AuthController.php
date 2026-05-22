@@ -1,35 +1,64 @@
 <?php
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; 
+use Illuminate\Support\Facades\Hash; 
 use App\Models\User;                 
 
 class AuthController extends Controller
 {
+    // The Login Bouncer
     public function login(Request $request)
     {
-        // Validate what the frontend sends
         $request->validate([
             'email' => 'required|email',
-            'password' => 'required'
+            'password' => 'required',
         ]);
 
-        // Check if the credentials are correct
-        if (!Auth::attempt($request->only('email', 'password'))) {
-            return response()->json(['message' => 'Invalid login details'], 401);
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'message' => 'Invalid credentials'
+            ], 401);
         }
 
-        // Find the user and generate a Sanctum Token
-        $user = User::where('email', $request->email)->firstOrFail();
-        $token = $user->createToken('flutter-mobile-app')->plainTextToken;
+        $token = $user->createToken('auth_token')->plainTextToken;
 
-        // Send the token back to the frontend
         return response()->json([
-            'message' => 'Login successful',
-            'access_token' => $token,
+            'token' => $token,
             'user' => $user
+        ], 200);
+    }
+
+    // The Registration Desk
+    public function register(Request $request)
+    {
+        // 1. Validate incoming data
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed', 
         ]);
+
+        // 2. Factory Blueprint: Capital 'U' and Double Colon '::'
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password), 
+            'role' => 'student', 
+        ]);
+
+        // 3. Specific Object: Variable '$user' and Arrow '->'
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        // 4. Return the success package to Flutter
+        return response()->json([
+            'message' => 'Registration successful',
+            'user' => $user,
+            'token' => $token,
+        ], 201);
     }
 }

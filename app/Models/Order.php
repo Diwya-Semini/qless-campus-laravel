@@ -1,28 +1,33 @@
 <?php
+
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
     use HasFactory;
 
-    // Protect against mass-assignment vulnerabilities
+    // YOUR custom database columns
     protected $fillable = [
-        'user_id',
-        'canteen_id',
-        'queue_number',
-        'status',
+        'user_id', 
+        'canteen_id', 
+        'total_amount', 
+        'queue_number', 
+        'status', 
+        'ticket_number'
     ];
 
+    // 1. Link back to the Student
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function canteen()
+    // 2. THE FIX: Link to the Food Items (This is what Laravel was crying about!)
+    public function items()
     {
-        return $this->belongsTo(Canteen::class);
+        return $this->hasMany(OrderItem::class);
     }
 }
