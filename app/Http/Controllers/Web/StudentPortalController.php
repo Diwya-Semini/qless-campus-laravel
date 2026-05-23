@@ -18,100 +18,121 @@ class StudentPortalController extends Controller
     }
     
     // Direct access to their assigned Canteen Menu
-    public function menu()
+    public function menu(Request $request)
     {
         $user = auth()->user();
+        
+        // 1. Start the base query: Only get available food for THIS student's campus
+        $query = Product::where('canteen_id', $user->canteen_id)
+                        ->where('is_available', 1);
 
-        // Safety Catch: If the Admin hasn't assigned them a canteen yet
-        if (!$user->canteen_id) {
-            return view('student.unassigned'); 
+        // 2. Apply Search Filter (if they typed something)
+        if ($request->filled('search')) {
+            $query->where('item_name', 'LIKE', '%' . $request->search . '%');
         }
 
-        // Get their specific canteen and its active products
-        $canteen = \App\Models\Canteen::findOrFail($user->canteen_id);
-        $products = \App\Models\Product::where('canteen_id', $canteen->id)
-                                       ->where('is_available', 1)
-                                       ->get();
+        // 3. Apply Category Filter (if they clicked a filter pill)
+        if ($request->filled('category') && $request->category !== 'All') {
+            $query->where('category', $request->category);
+        }
 
-        return view('student.menu', compact('canteen', 'products'));
+        // 4. Finally, fetch the filtered results from the database
+        $products = $query->get();
+        
+        // Count items in cart for the floating bar
+        $itemCount = collect(session()->get('cart', []))->sum('quantity');
+
+        // Pass the current filters back to the view so the UI remembers what was clicked
+        $currentCategory = $request->category ?? 'All';
+        $currentSearch = $request->search ?? '';
+
+        return view('student.menu', compact('products', 'itemCount', 'currentCategory', 'currentSearch'));
     }
 
     // add cart to session cart
+    // 1. ADD TO SESSION CART (No Database yet!)
     public function addToCart(Request $request, $id)
     {
-        $product = Product::findOrFail($product_id);
-        $cart = Session::get('cart', []);
+        $product = Product::findOrFail($id);
+        $cart = session()->get('cart', []);
 
-        if(isset($cart[$product_id])){
-            $cart[$product_id]['quantity']++;
-        }else{
-            $cart[$product_id] = [
-                'name' => $product->item_name,
-                'quantity' => 1,
-                'price' => $product->price,
-                'image' => $product->image_url
+        // If item is already in cart, just add to the quantity
+        if(isset($cart[$id])) {
+            $cart[$id]['quantity']++;
+        } else {
+            // Otherwise, add the new item
+            $cart[$id] = [
+                "name" => $product->item_name,
+                "quantity" => 1,
+                "price" => $product->price,
+                "image" => $product->image_url
             ];
         }
-        Session::put('cart', $cart);
-        return redirect()->route('student.menu')->with('success', 'Added to Cart!');
 
+        session()->put('cart', $cart);
+        return redirect()->back()->with('success', $product->item_name . ' added to your cart!');
     }
 
-    // view cart
-    public function cart()
+    // 2. VIEW THE CART PAGE
+    public function viewCart()
     {
-        return view('student_portal.cart');
+        $cart = session()->get('cart', []);
+        return view('student.cart', compact('cart'));
     }
 
-    // checkout
-    public function checkout()
+    // 3. THE FINAL CHECKOUT (This is where the DB Transaction goes!)
+    public function checkout(Request $request)
     {
-        $cart = Session::get('cart');
-        if(!$cart) return redirect()->route('student.menu')->with('error', 'Cart is empty!');
+        $cart = session()->get('cart');
+        if(!$cart) {
+            return redirect()->back()->with('error', 'Your cart is empty!');
+        }
 
-        // transfer data to orders table and order items table
-        DB::beginTransaction();
-        try {
-            $totalAmount = 0;
-            foreach($cart as $item) { $totalAmount += $item['price'] * $item['quantity']; }
+        $user = auth()->user();
+        $totalAmount = 0;
+        foreach($cart as $item) {
+            $totalAmount += $item['price'] * $item['quantity'];
+        }
 
-            $queueNumber = Order::whereDate('created_at', today())->count() + 1;
-            $ticketNumber = rand(1000, 9999);
-
+        // The 10/10 Flex: Database Transaction
+        DB::transaction(function () use ($cart, $user, $totalAmount) {
+            // Create the Order
             $order = Order::create([
-                'user_id' => auth()->id(),
-                'canteen_id' => 1, // Default for single campus
+                'user_id' => $user->id,
+                'canteen_id' => $user->canteen_id,
                 'total_amount' => $totalAmount,
-                'queue_number' => $queueNumber,
-                'ticket_number' => $ticketNumber,
-                'status' => 'pending',
+                'status' => 'pending'
             ]);
 
-            foreach ($cart as $id => $item) {
+            // Create the Order Items
+            foreach($cart as $id => $item) {
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $id,
                     'quantity' => $item['quantity'],
-                    'subtotal' => $item['price'] * $item['quantity'],
+                    'price' => $item['price']
                 ]);
             }
+        });
 
-            Session::forget('cart'); // Clear cart after success
-            DB::commit();
-
-            return redirect()->route('student.orders')->with('success', 'Order Placed!');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Checkout failed.');
-        }
+        // Clear the cart after a successful order
+        session()->forget('cart');
+        return redirect()->route('student.menu')->with('success', 'Order sent to the kitchen!');
     }
 
     // show order history and live ticket
-    public function orders()
+    // 4. VIEW ORDER HISTORY
+    public function history()
     {
-        $orders = Order::where('user_id', auth()->id())->orderBy('created_at', 'desc')->get();
-        return view('student_portal.orders', compact('orders'));
+        $user = auth()->user();
+
+        // Fetch all orders for this specific student, ordered by newest first!
+        $orders = Order::with(['items.product'])
+                       ->where('user_id', $user->id)
+                       ->orderBy('created_at', 'desc')
+                       ->get();
+
+        return view('student.orders', compact('orders'));
     }
 
     

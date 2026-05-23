@@ -23,18 +23,36 @@ new class extends Component
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        @forelse($orders as $order)
         <div class="bg-white/[0.02] border border-white/5 rounded-2xl p-6 backdrop-blur-xl border-l-4 border-l-orange-500 shadow-lg">
             <div class="flex justify-between items-start mb-4">
-                <span class="bg-orange-500/10 text-orange-400 text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider">Order #1042</span>
-                <span class="text-gray-500 text-xs font-bold">Just now</span>
+                <span class="bg-orange-500/10 text-orange-400 text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider">
+                    Order #{{ $order->id }}
+                </span>
+                <span class="text-gray-500 text-xs font-bold">{{ $order->created_at->diffForHumans() }}</span>
             </div>
-            <h3 class="text-xl font-bold text-white mb-2">Avishka Fernando</h3>
+            
+            <h3 class="text-xl font-bold text-white mb-2">{{ $order->user->name }}</h3>
+            
             <ul class="text-sm text-gray-300 space-y-2 mb-6 border-y border-white/5 py-4">
-                <li class="flex justify-between"><span>2x Chicken Fried Rice</span> <span>Rs. 1300.00</span></li>
+                @foreach($order->items as $item)
+                <li class="flex justify-between">
+                    <span>{{ $item->quantity }}x {{ $item->product->item_name }}</span> 
+                    <span>Rs. {{ number_format($item->price, 2) }}</span>
+                </li>
+                @endforeach
             </ul>
+            
             <button class="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-2 px-4 rounded-xl transition duration-200">
                 Mark as Ready
             </button>
         </div>
+        @empty
+        <div class="col-span-full py-12 text-center text-gray-500 border border-dashed border-white/10 rounded-2xl">
+            No pending orders in the kitchen.
+        </div>
+        @endforelse
+
     </div>
 </div>

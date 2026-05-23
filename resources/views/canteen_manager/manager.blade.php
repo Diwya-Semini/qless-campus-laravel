@@ -1,53 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kitchen Dashboard - Q-Less</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="bg-[#121212] text-gray-200 font-sans antialiased flex h-screen overflow-hidden">
+@extends('layouts.manager')
 
-    <aside class="w-64 bg-[#1a1a1a] border-r border-gray-800 flex flex-col">
-        <div class="h-16 flex items-center px-6 border-b border-gray-800">
-            <div class="w-4 h-4 rounded-full bg-gray-500 mr-3"></div>
-            <h1 class="text-lg font-bold tracking-wide text-white">Q-Less Campus</h1>
-        </div>
-        <nav class="flex-1 py-4 flex flex-col gap-2 px-3">
-            <a href="#" class="flex items-center px-4 py-3 bg-[#2a2a2a] rounded-lg text-white font-medium border-l-4 border-gray-400">
-                <div class="w-5 h-5 rounded bg-gray-600 mr-3"></div>
-                Live Orders
-            </a>
-            <a href="{{ route('menu.index') }}" class="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-[#222] rounded-lg transition">
-                <div class="w-5 h-5 rounded bg-gray-800 mr-3"></div>
-                Menu Management
-            </a>
-            <a href="#" class="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-[#222] rounded-lg transition">
-                <div class="w-5 h-5 rounded bg-gray-800 mr-3"></div>
-                Order History
-            </a>
-            <a href="#" class="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-[#222] rounded-lg transition">
-                <div class="w-5 h-5 rounded bg-gray-800 mr-3"></div>
-                Settings
-            </a>
-        </nav>
-    </aside>
-
-    <main class="flex-1 flex flex-col h-screen overflow-hidden">
-        
-        <header class="h-16 flex items-center justify-between px-8 border-b border-gray-800 bg-[#121212]">
-            <div class="flex items-center text-gray-300">
-                <svg class="w-6 h-6 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                <span class="text-xl font-semibold text-white">Canteen Name</span>
-            </div>
-            
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="bg-[#ff5722] hover:bg-[#e64a19] text-white text-sm font-bold py-2 px-6 rounded-full transition">
-                    Logout
-                </button>
-            </form>
-        </header>
+@section('content')
 
         <div class="flex-1 overflow-y-auto p-8">
             
@@ -187,6 +140,4 @@
                 </div>
             </div>
         </div>
-    </main>
-</body>
-</html>
+@endsection

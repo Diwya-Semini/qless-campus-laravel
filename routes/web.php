@@ -71,20 +71,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     */
     Route::middleware(['manager'])->group(function () {
         // Live Cooking Queue Lines
-        Route::get('/manager/dashboard', [DashboardController::class, 'index'])->name('manager.dashboard');
         Route::patch('/orders/{order}/ready', [DashboardController::class, 'markReady'])->name('orders.ready');
         
         // Paginated Past Fulfilled Records
         Route::get('/manager/history', [DashboardController::class, 'history'])->name('manager.history');
         
-        // Operational Controls & Store Status Switch
-        Route::get('/manager/settings', [DashboardController::class, 'settings'])->name('manager.settings');
-        Route::post('/manager/settings/toggle', [DashboardController::class, 'toggleStore'])->name('manager.settings.toggle');
-
-        // Complete Menu Catalog CRUD Subsystem
-        Route::resource('menu', MenuController::class);
-        
         Route::get('/manager/orders', \App\Livewire\LiveOrderBoard::class)->name('manager.orders');
+
+        Route::get('/manager/dashboard', function () { return view('manager.dashboard'); })->name('manager.dashboard');
+        Route::get('/manager/menu', function () { return view('manager.menu'); })->name('manager.menu');
+        Route::get('/manager/settings', function () { return view('manager.settings'); })->name('manager.settings');
     });
 
     /*
@@ -93,23 +89,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     |--------------------------------------------------------------------------
     | Mobile-responsive browser ordering interface maps.
     */
-    // Gateway Displaying Open Campus Canteens
     Route::middleware(['student'])->group(function () {
-        // Step 1: Pick a Canteen
-        Route::get('/student/canteens', [StudentPortalController::class, 'dashboard'])->name('student.dashboard');
-        
-        // Step 2: View the Menu
-    Route::get('/student/menu', [StudentPortalController::class, 'menu'])->name('student.menu');
-        Route::get('/student/orders', [StudentPortalController::class, 'myOrders'])->name('student.orders');
-
-            // Temporary Browser Checkout Session Cart Interfaces
-        Route::get('/student/cart', function () { 
-            return view('student_portal.cart'); 
-        })->name('student.cart');
-
+        Route::get('/student/menu', [StudentPortalController::class, 'menu'])->name('student.menu');
         Route::post('/student/cart/add/{id}', [StudentPortalController::class, 'addToCart'])->name('student.cart.add');
-
-    });    
+        
+        // ADD THESE TWO NEW ROUTES:
+        Route::get('/student/cart', [StudentPortalController::class, 'viewCart'])->name('student.cart.view');
+        Route::post('/student/checkout', [StudentPortalController::class, 'checkout'])->name('student.checkout');
+        Route::get('/student/orders', [StudentPortalController::class, 'history'])->name('student.orders');
+    }); 
 
 });
 
