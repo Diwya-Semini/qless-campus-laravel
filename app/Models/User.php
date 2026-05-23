@@ -68,4 +68,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function canteen()
+    {
+        return $this->belongsTo(Canteen::class, 'canteen_id');
+    }
 }

@@ -11,14 +11,12 @@
     <nav class="bg-[#16161a] border-b border-gray-800 p-4 sticky top-0 z-50 shadow-lg shadow-black/50">
         <div class="max-w-6xl mx-auto flex justify-between items-center">
             
-            <a href="{{ route('student.menu') }}" class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-orange-500 shadow-[0_0_10px_rgba(255,87,34,0.8)]"></span>
+            <a href="{{ route('student.dashboard') }}" class="flex items-center gap-2">                <span class="w-3 h-3 rounded-full bg-orange-500 shadow-[0_0_10px_rgba(255,87,34,0.8)]"></span>
                 <div class="text-xl font-black text-white tracking-widest uppercase">Q-LESS<span class="text-orange-500 font-medium lowercase">.campus</span></div>
             </a>
 
             <div class="flex items-center gap-6 font-semibold text-sm">
-                <a href="{{ route('student.menu') }}" class="text-gray-300 hover:text-white transition">Menu</a>
-                
+            <a href="{{ route('student.dashboard') }}" class="flex items-center gap-2">                
                 <a href="{{ route('student.cart') }}" class="text-gray-300 hover:text-orange-500 transition flex items-center gap-1">
                     Tray 
                     @if(count(session('cart', [])) > 0)

@@ -13,15 +13,10 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            
-            $table->foreignId('canteen_id')->constrained()->cascadeOnDelete();
-            
-            $table->string('queue_number');
-            
-            $table->enum('status', ['pending', 'ready', 'completed', 'cancelled'])->default('pending');
-            
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('canteen_id')->constrained()->onDelete('cascade');
+            $table->decimal('total_amount', 8, 2);
+            $table->string('status')->default('pending'); // pending, ready, completed
             $table->timestamps();
         });
     }

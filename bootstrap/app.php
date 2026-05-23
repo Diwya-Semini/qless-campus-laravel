@@ -4,6 +4,10 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
+use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\StudentMiddleware;
+use App\Http\Middleware\ManagerMiddleware;
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -13,10 +17,17 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         
-        // THE FIX: Register the nickname so Laravel routes recognize ['middleware' => 'manager']
         $middleware->alias([
             'manager' => \App\Http\Middleware\ManagerAccess::class,
         ]);
+
+        // 2. Register your custom alias right here!
+        $middleware->alias([
+            'admin' => AdminMiddleware::class,
+            'manager' => ManagerMiddleware::class,
+            'student' => StudentMiddleware::class,
+
+        ]);        
 
     })
     ->withExceptions(function (Exceptions $exceptions) {

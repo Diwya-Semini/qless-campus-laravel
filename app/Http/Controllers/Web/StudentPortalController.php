@@ -17,32 +17,27 @@ class StudentPortalController extends Controller
         return $this->menu();
     }
     
-    // show menu
-    public function menu(Request $request)
+    // Direct access to their assigned Canteen Menu
+    public function menu()
     {
-        // Start an eloquent query builder instance
-        $query = Product::query();
+        $user = auth()->user();
 
-        // search filter
-        if ($request->filled('search')) {
-            $query->where('item_name', 'like', '%' . $request->search . '%');
+        // Safety Catch: If the Admin hasn't assigned them a canteen yet
+        if (!$user->canteen_id) {
+            return view('student.unassigned'); 
         }
 
-        // category pill filter
-        if ($request->filled('category')) {
-            $query->where('category', $request->category);
-        }
+        // Get their specific canteen and its active products
+        $canteen = \App\Models\Canteen::findOrFail($user->canteen_id);
+        $products = \App\Models\Product::where('canteen_id', $canteen->id)
+                                       ->where('is_available', 1)
+                                       ->get();
 
-        // Fetch products prioritizing availability
-        $products = $query->orderBy('isAvailable', 'desc')
-                           ->orderBy('category', 'asc')
-                           ->get();
-
-        return view('student_portal.menu', compact('products'));
+        return view('student.menu', compact('canteen', 'products'));
     }
 
     // add cart to session cart
-    public function addToCart(Request $request, $product_id)
+    public function addToCart(Request $request, $id)
     {
         $product = Product::findOrFail($product_id);
         $cart = Session::get('cart', []);

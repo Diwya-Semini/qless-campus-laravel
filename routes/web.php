@@ -4,19 +4,15 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\MenuController;
 use App\Http\Controllers\Web\StudentPortalController;
-use App\Http\Controllers\Auth\VendorRegisterController; // <-- Added for SaaS Canteen Onboarding
+use App\Http\Controllers\Auth\VendorRegisterController; 
+use App\Http\Controllers\Web\AdminController; 
+
 
 // 1. PUBLIC LANDING ENTRYWAY
 Route::get('/', function () {
     return view('welcome');
 });
 
-/*
-|--------------------------------------------------------------------------
-| PUBLIC SAAS VENDOR ONBOARDING ROUTES
-|--------------------------------------------------------------------------
-
-*/
 Route::get('/register', [VendorRegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [VendorRegisterController::class, 'register'])->name('register.store');
 
@@ -33,9 +29,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | Implements multi-tenant onboarding controls.
     */
     Route::middleware(['admin'])->group(function () {
-        Route::get('/admin/dashboard', function () {
-            return view('uni_admin.canteens');
-        })->name('admin.dashboard');
+        // Canteen Dashboard & Approvals
+        Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+        
+        // Add New Canteen (Create)
+        Route::get('/admin/canteen/create', [AdminController::class, 'createCanteen'])->name('admin.canteen.create');
+        Route::post('/admin/canteen', [AdminController::class, 'storeCanteen'])->name('admin.canteen.store');
+        
+        // User Directory
+        Route::get('/admin/users', [AdminController::class, 'users'])->name('admin.users');
+        
+        // Remove Manager (Delete)
+        Route::delete('/admin/users/{id}', [AdminController::class, 'destroyUser'])->name('admin.users.destroy');
     });
 
     /*
@@ -54,7 +59,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return redirect()->route('manager.dashboard');
         } else {
             // Default fallback for students
-            return redirect()->route('student.canteens'); 
+            return redirect()->route('student.menu'); 
         }
     })->name('dashboard');
 
@@ -78,6 +83,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Complete Menu Catalog CRUD Subsystem
         Route::resource('menu', MenuController::class);
+        
+        Route::get('/manager/orders', \App\Livewire\LiveOrderBoard::class)->name('manager.orders');
     });
 
     /*
@@ -87,18 +94,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | Mobile-responsive browser ordering interface maps.
     */
     // Gateway Displaying Open Campus Canteens
-    Route::get('/student/canteens', [StudentPortalController::class, 'index'])->name('student.canteens');
-    
-    // Isolated Menu Items for the Chosen Tenant Stall
-    Route::get('/student/canteen/{id}', [StudentPortalController::class, 'showCanteen'])->name('student.canteen');
-    
-    // Live Order Progress & Active Queue Tickets tracking
-    Route::get('/student/orders', [StudentPortalController::class, 'myOrders'])->name('student.orders');
-    
-    // Temporary Browser Checkout Session Cart Interfaces
-    Route::get('/student/cart', function () { 
-        return view('student_portal.cart'); 
-    })->name('student.cart');
+    Route::middleware(['student'])->group(function () {
+        // Step 1: Pick a Canteen
+        Route::get('/student/canteens', [StudentPortalController::class, 'dashboard'])->name('student.dashboard');
+        
+        // Step 2: View the Menu
+    Route::get('/student/menu', [StudentPortalController::class, 'menu'])->name('student.menu');
+        Route::get('/student/orders', [StudentPortalController::class, 'myOrders'])->name('student.orders');
+
+            // Temporary Browser Checkout Session Cart Interfaces
+        Route::get('/student/cart', function () { 
+            return view('student_portal.cart'); 
+        })->name('student.cart');
+
+        Route::post('/student/cart/add/{id}', [StudentPortalController::class, 'addToCart'])->name('student.cart.add');
+
+    });    
 
 });
 
