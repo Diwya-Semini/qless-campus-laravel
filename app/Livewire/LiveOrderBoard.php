@@ -1,25 +1,76 @@
 <?php
+
 namespace App\Livewire;
 
 use Livewire\Component;
-use Livewire\Attributes\Layout;
-use Illuminate\Support\Facades\Auth;
 use App\Models\Order;
+use App\Jobs\SendOrderReceipt; 
+use Illuminate\Support\Facades\Auth;
 
-#[Layout('layouts.manager')]
 class LiveOrderBoard extends Component
 {
+    // Variables for the OTP Popup
+    public $showOtpModal = false;
+    public $verifyingOrderId = null;
+    public $enteredOtp = '';
+    public $otpError = '';
+
+    // Standard status update (Pending -> Preparing -> Packing)
+    public function updateOrderStatus($orderId, $newStatus)
+    {
+        $order = Order::find($orderId);
+        if ($order && $order->canteen_id === Auth::user()->canteen_id) {
+            $order->update(['status' => $newStatus]);
+        }
+    }
+
+    // 1. Opens the popup when they click "Hand to Student"
+    public function promptOtp($orderId)
+    {
+        $this->verifyingOrderId = $orderId;
+        $this->enteredOtp = '';
+        $this->otpError = '';
+        $this->showOtpModal = true;
+    }
+
+    // 2. Closes the popup
+    public function closeOtpModal()
+    {
+        $this->showOtpModal = false;
+        $this->verifyingOrderId = null;
+    }
+
+    // 3. Verifies the code!
+    public function verifyAndComplete()
+    {
+        $order = Order::find($this->verifyingOrderId);
+
+        // Check if the typed OTP matches the database
+        if ($order && $order->otp === $this->enteredOtp) {
+            
+            // 1. Mark the order as complete in the database
+            $order->update(['status' => 'completed']);
+            
+            \App\Jobs\SendOrderReceipt::dispatch($order);
+
+            $this->closeOtpModal();
+            
+        } else {
+            $this->otpError = 'Incorrect PIN. Please check with the student.';
+        }
+    }
+
     public function render()
     {
         $manager = Auth::user();
         
-        // Fetch real, pending orders for THIS specific manager's canteen!
         $orders = Order::with(['user', 'items.product'])
                        ->where('canteen_id', $manager->canteen_id)
-                       ->where('status', 'pending')
-                       ->orderBy('created_at', 'desc')
+                       ->whereIn('status', ['pending', 'preparing', 'packing', 'ready'])
+                       ->orderBy('created_at', 'asc')
                        ->get();
 
-        return view('livewire.live-order-board', compact('orders'));
+        return view('livewire.live-order-board', compact('orders'))
+            ->layout('layouts.manager');
     }
 }

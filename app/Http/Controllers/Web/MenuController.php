@@ -3,109 +3,77 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
 use Illuminate\Http\Request;
+use App\Models\Product; 
+use Illuminate\Support\Facades\Auth;
 
 class MenuController extends Controller
 {
-    /**
-     * Display the complete campus menu grid.
-     */
-    public function index(Request $request)
+    public function index()
     {
-        // Simply query all products in the database!
-        $query = Product::query();
+        $manager = Auth::user();
+        $menuItems = Product::where('canteen_id', $manager->canteen_id)
+                            ->orderBy('created_at', 'desc')
+                            ->get();
 
-        // Handle the live search bar
-        if ($request->has('search')) {
-            $query->where('item_name', 'like', '%' . $request->search . '%');
-        }
-
-        $products = $query->orderBy('category', 'asc')->get();
-
-        return view('canteen_manager.menu.index', compact('products'));
+        return view('canteen_manager.menu.index', compact('menuItems'));
     }
 
-    /**
-     * Show the form for creating a new menu item.
-     */
     public function create()
     {
         return view('canteen_manager.menu.create');
     }
 
-    /**
-     * Store a newly created menu item in the database.
-     */
     public function store(Request $request)
     {
         $request->validate([
-            'item_name'   => 'required|string|max:255',
-            'price'       => 'required|numeric|min:0',
+            'item_name' => 'required|string|max:255',
+            'category' => 'required|string',
+            'price' => 'required|numeric|min:0',
             'description' => 'nullable|string',
-            'image_url'   => 'nullable|url', 
-            'category'    => 'required|string',
+            'image_url' => 'nullable|string', // Changed to image_url
         ]);
 
-        Product::create([
-            'item_name'   => $request->item_name,
-            'price'       => $request->price,
-            'description' => $request->description,
-            'image_url'   => $request->image_url,
-            'category'    => $request->category,
-            'isAvailable' => $request->has('isAvailable'), 
-            // Removed canteen_id entirely!
-        ]);
+        $data = $request->all();
+        $data['canteen_id'] = Auth::user()->canteen_id;
+        $data['is_available'] = $request->has('is_available') ? 1 : 0;
 
-        return redirect()->route('menu.index')->with('success', 'Dish added successfully!');
+        Product::create($data);
+
+        return redirect()->route('manager.menu')->with('success', 'Menu item added successfully!');
     }
 
-    /**
-     * Show the form for editing the specified menu item.
-     */
     public function edit($id)
     {
-        // Just find the product directly by its ID
-        $product = Product::findOrFail($id);
-
-        return view('canteen_manager.menu.edit', compact('product'));
+        $menuItem = Product::where('canteen_id', Auth::user()->canteen_id)->findOrFail($id);
+        return view('canteen_manager.menu.edit', compact('menuItem'));
     }
 
-    /**
-     * Update the specified menu item in storage.
-     */
     public function update(Request $request, $id)
     {
-        $product = Product::findOrFail($id);
+        $menuItem = Product::where('canteen_id', Auth::user()->canteen_id)->findOrFail($id);
 
         $request->validate([
-            'item_name'   => 'required|string|max:255',
-            'price'       => 'required|numeric|min:0',
+            'item_name' => 'required|string|max:255',
+            'category' => 'required|string',
+            'price' => 'required|numeric|min:0',
             'description' => 'nullable|string',
-            'image_url'   => 'nullable|url',
-            'category'    => 'required|string',
+            'image_url' => 'nullable|string', // Changed to image_url
         ]);
 
-        $product->update([
-            'item_name'   => $request->item_name,
-            'price'       => $request->price,
-            'description' => $request->description,
-            'image_url'   => $request->image_url,
-            'category'    => $request->category,
-            'isAvailable' => $request->has('isAvailable'),
-        ]);
+        $data = $request->all();
+        $data['is_available'] = $request->has('is_available') ? 1 : 0;
 
-        return redirect()->route('menu.index')->with('success', 'Dish updated successfully!');
+        $menuItem->update($data);
+
+        return redirect()->route('manager.menu')->with('success', 'Menu item updated successfully!');
     }
 
-    /**
-     * Remove the specified menu item from storage.
-     */
     public function destroy($id)
     {
-        $product = Product::findOrFail($id);
-        $product->delete();
+        $menuItem = Product::where('canteen_id', Auth::user()->canteen_id)->findOrFail($id);
+        $menuItem->delete();
 
-        return redirect()->route('menu.index')->with('success', 'Dish deleted from catalog!');
+        return redirect()->route('manager.menu')->with('success', 'Menu item deleted completely.');
     }
 }

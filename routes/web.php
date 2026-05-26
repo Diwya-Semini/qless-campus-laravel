@@ -6,9 +6,15 @@ use App\Http\Controllers\Web\MenuController;
 use App\Http\Controllers\Web\StudentPortalController;
 use App\Http\Controllers\Auth\VendorRegisterController; 
 use App\Http\Controllers\Web\AdminController; 
+use App\Http\Controllers\Web\ManagerPortalController;
+// FIXED: Imported your admin controller sitting inside the Web folder path
+use App\Http\Controllers\Web\AdminDashboardController; 
 
-
-// 1. PUBLIC LANDING ENTRYWAY
+/*
+|--------------------------------------------------------------------------
+| 1. PUBLIC LANDING ENTRYWAY
+|--------------------------------------------------------------------------
+*/
 Route::get('/', function () {
     return view('welcome');
 });
@@ -19,7 +25,11 @@ Route::post('/register', [VendorRegisterController::class, 'register'])->name('r
 Route::get('/vendor/register', [VendorRegisterController::class, 'showRegistrationForm'])->name('vendor.register');
 Route::post('/vendor/onboarding', [VendorRegisterController::class, 'register']);
 
-// 2. AUTHENTICATED SYSTEM BOUNDARY (All users must be logged in)
+/*
+|--------------------------------------------------------------------------
+| 2. AUTHENTICATED SYSTEM BOUNDARY (All users must be logged in)
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth', 'verified'])->group(function () {
 
     /*
@@ -27,20 +37,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | ROLE 1: UNIVERSITY ADMIN ROUTES
     |--------------------------------------------------------------------------
     | Implements multi-tenant onboarding controls.
+    |
     */
-    Route::middleware(['admin'])->group(function () {
-        // Canteen Dashboard & Approvals
-        Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+        // Dashboard View (The grid layout network screen)
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
         
-        // Add New Canteen (Create)
-        Route::get('/admin/canteen/create', [AdminController::class, 'createCanteen'])->name('admin.canteen.create');
-        Route::post('/admin/canteen', [AdminController::class, 'storeCanteen'])->name('admin.canteen.store');
-        
-        // User Directory
-        Route::get('/admin/users', [AdminController::class, 'users'])->name('admin.users');
-        
-        // Remove Manager (Delete)
-        Route::delete('/admin/users/{id}', [AdminController::class, 'destroyUser'])->name('admin.users.destroy');
+        // Deploy/Add New Tenant Form Actions
+        Route::get('/canteens/create', [AdminDashboardController::class, 'create'])->name('canteens.create');
+        Route::post('/canteens/store', [AdminDashboardController::class, 'store'])->name('canteens.store');
     });
 
     /*
@@ -70,18 +75,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | Isolated by 'manager' middleware to prevent student access.
     */
     Route::middleware(['manager'])->group(function () {
-        // Live Cooking Queue Lines
-        Route::patch('/orders/{order}/ready', [DashboardController::class, 'markReady'])->name('orders.ready');
-        
-        // Paginated Past Fulfilled Records
-        Route::get('/manager/history', [DashboardController::class, 'history'])->name('manager.history');
-        
+        Route::get('/manager/dashboard', [ManagerPortalController::class, 'dashboard'])->name('manager.dashboard');
         Route::get('/manager/orders', \App\Livewire\LiveOrderBoard::class)->name('manager.orders');
+        Route::get('/manager/settings', function () { return view('canteen_manager.settings'); })->name('manager.settings');
 
-        Route::get('/manager/dashboard', function () { return view('manager.dashboard'); })->name('manager.dashboard');
-        Route::get('/manager/menu', function () { return view('manager.menu'); })->name('manager.menu');
-        Route::get('/manager/settings', function () { return view('manager.settings'); })->name('manager.settings');
-    });
+        Route::resource('/manager/menu', \App\Http\Controllers\Web\MenuController::class)->names([
+            'index' => 'manager.menu', 
+            'create' => 'manager.menu.create',
+            'store' => 'manager.menu.store',
+            'edit' => 'manager.menu.edit',
+            'update' => 'manager.menu.update',
+            'destroy' => 'manager.menu.destroy',
+        ]);
+    }); 
 
     /*
     |--------------------------------------------------------------------------
@@ -90,17 +96,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | Mobile-responsive browser ordering interface maps.
     */
     Route::middleware(['student'])->group(function () {
+        // 1. Menu views
         Route::get('/student/menu', [StudentPortalController::class, 'menu'])->name('student.menu');
-        Route::post('/student/cart/add/{id}', [StudentPortalController::class, 'addToCart'])->name('student.cart.add');
+        Route::get('/student/order', [StudentPortalController::class, 'menu']); // Helper alias
         
-        // ADD THESE TWO NEW ROUTES:
+        // 2. Cart Processing
+        Route::post('/student/cart/add/{id}', [StudentPortalController::class, 'addToCart'])->name('student.cart.add');
         Route::get('/student/cart', [StudentPortalController::class, 'viewCart'])->name('student.cart.view');
         Route::post('/student/checkout', [StudentPortalController::class, 'checkout'])->name('student.checkout');
+        
+        // 3. Order History Tracking
         Route::get('/student/orders', [StudentPortalController::class, 'history'])->name('student.orders');
-    }); 
+    });
 
 });
-
-// // 3. LARAVEL BREEZE DEFAULT AUTHENTICATION
-// // This pulls in all your default login, logout, and password reset logic
-// require __DIR__.'/auth.php';

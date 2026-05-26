@@ -80,7 +80,8 @@ class StudentPortalController extends Controller
         return view('student.cart', compact('cart'));
     }
 
-    // 3. THE FINAL CHECKOUT (This is where the DB Transaction goes!)
+    // 3. THE FINAL CHECKOUT
+    // 3. THE FINAL CHECKOUT (Fixed to securely write the OTP into the DB)
     public function checkout(Request $request)
     {
         $cart = session()->get('cart');
@@ -94,14 +95,15 @@ class StudentPortalController extends Controller
             $totalAmount += $item['price'] * $item['quantity'];
         }
 
-        // The 10/10 Flex: Database Transaction
+        // Database Transaction
         DB::transaction(function () use ($cart, $user, $totalAmount) {
-            // Create the Order
+            // Create the Order with a generated 4-digit PIN code
             $order = Order::create([
                 'user_id' => $user->id,
                 'canteen_id' => $user->canteen_id,
                 'total_amount' => $totalAmount,
-                'status' => 'pending'
+                'status' => 'pending',
+                'otp' => rand(1000, 9999) // <-- FIXED: Generates and stores the numeric PIN directly!
             ]);
 
             // Create the Order Items
@@ -115,23 +117,29 @@ class StudentPortalController extends Controller
             }
         });
 
-        // Clear the cart after a successful order
+        // Clear the session cart after a successful transaction database entry
         session()->forget('cart');
-        return redirect()->route('student.menu')->with('success', 'Order sent to the kitchen!');
+        
+        // Redirect the student straight to their active tracking screen summary card list
+        return redirect()->route('student.orders')->with('success', 'Order sent to the kitchen!');
     }
 
+    
     // show order history and live ticket
+    // 4. VIEW ORDER HISTORY
+    // 4. VIEW ORDER HISTORY
     // 4. VIEW ORDER HISTORY
     public function history()
     {
         $user = auth()->user();
 
-        // Fetch all orders for this specific student, ordered by newest first!
+        // Fetch all orders for this specific student, including the items and related products
         $orders = Order::with(['items.product'])
                        ->where('user_id', $user->id)
                        ->orderBy('created_at', 'desc')
                        ->get();
 
+        // Point to your exact file: resources/views/student/orders.blade.php
         return view('student.orders', compact('orders'));
     }
 

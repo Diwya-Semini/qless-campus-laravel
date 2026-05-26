@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Mail;
 
 use App\Models\Order;
@@ -8,11 +9,10 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class OrderReceipt extends Mailable
+class OrderReceiptMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    // make the order data available to email template
     public $order;
 
     public function __construct(Order $order)
@@ -23,14 +23,19 @@ class OrderReceipt extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Your Q-Less Canteen Receipt & Ticket',
+            subject: 'Your Qless Campus Order Receipt - #' . $this->order->id,
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.orders.receipt',
+            view: 'emails.receipt',
         );
+    }
+
+    public function attachments(): array
+    {
+        return [];
     }
 }

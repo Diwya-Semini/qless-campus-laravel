@@ -7,13 +7,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Canteen extends Model
 {
-    use HasFactory; 
+    use HasFactory;
 
-    // This protects your database from mass-assignment vulnerabilities
+    // Updated to match your exact database columns
     protected $fillable = [
         'name',
         'location',
         'operating_hours',
         'is_open'
     ];
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 }
