@@ -40,12 +40,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     |
     */
     Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-        // Dashboard View (The grid layout network screen)
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
-        
-        // Deploy/Add New Tenant Form Actions
+    
         Route::get('/canteens/create', [AdminDashboardController::class, 'create'])->name('canteens.create');
         Route::post('/canteens/store', [AdminDashboardController::class, 'store'])->name('canteens.store');
+        
+        // NEW: Decommission / Cancel registration route endpoint mapping
+        Route::delete('/canteens/{id}/cancel', [AdminDashboardController::class, 'destroyCanteen'])->name('canteens.cancel');
+
+        Route::get('/managers', [AdminDashboardController::class, 'platformManagers'])->name('managers');
+        Route::post('/managers/{id}/approve', [AdminDashboardController::class, 'approveManager'])->name('managers.approve');
+        Route::post('/managers/{id}/reject', [AdminDashboardController::class, 'rejectManager'])->name('managers.reject');
     });
 
     /*
@@ -61,7 +66,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         if ($user->role === 'admin') {
             return redirect()->route('admin.dashboard');
         } elseif ($user->role === 'manager') {
-            return redirect()->route('manager.dashboard');
+            if ($user->approval_status === 'pending') {
+                return redirect()->route('manager.awaiting-approval');
+            } elseif ($user->approval_status === 'rejected') {
+            return redirect()->route('login')->with('error', 'Your registration request was declined.');
+        }
+        return redirect()->route('manager.dashboard');
         } else {
             // Default fallback for students
             return redirect()->route('student.menu'); 
@@ -87,6 +97,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'update' => 'manager.menu.update',
             'destroy' => 'manager.menu.destroy',
         ]);
+        Route::get('/manager/awaiting-approval', function () {
+            return view('canteen_manager.awaiting-approval');
+        })->name('manager.awaiting-approval');
     }); 
 
     /*

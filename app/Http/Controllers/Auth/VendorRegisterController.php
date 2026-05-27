@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\Canteen; 
+use App\Models\Canteen;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class VendorRegisterController extends Controller
 {
@@ -25,47 +25,44 @@ class VendorRegisterController extends Controller
      */
     public function register(Request $request)
     {
-
-        // 1. Validate the incoming form data
+        // 1. Validate the incoming form fields (No canteen_id requested from user!)
         $request->validate([
-            'name'         => 'required|string|max:255',
-            'email'        => 'required|string|email|max:255|unique:users',
-            'canteen_name' => 'required|string|max:255',
-            'location'     => 'required|string|max:255',
-            'password'     => 'required|string|min:8|confirmed',
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'location' => 'required|string|max:255',       // e.g., "Malabe"
+            'canteen_name' => 'required|string|max:255',   // e.g., "Food Court"
         ]);
 
-        // 2. Wrap database inserts in a transaction
-        // This ensures if the User fails to create, the Canteen is rolled back too!
-        DB::beginTransaction();
-
-        try {
-            // Step A: Create the new Campus Canteen Profile
+        // 2. Wrap execution inside a transaction so nothing gets half-created if something goes wrong
+        DB::transaction(function () use ($request) {
+            
+            // STEP A: Create the new Canteen outlet dynamically
+            // Combining the campus location prefix for standard naming style (e.g. "SLIIT - Food Court")
+            $fullCanteenName = $request->location . ' - ' . $request->canteen_name;
+            
             $canteen = Canteen::create([
-                'name'     => $request->canteen_name,
+                'name' => $fullCanteenName,
                 'location' => $request->location,
-                'status'   => 'pending', 
-                'operating_hours' => '8:00 AM - 5:00 PM',
+                'operating_hours' => '8:00 AM - 6:00 PM', // Default operational placeholder
+                'is_open' => 0,                           // Closed until Admin validates them!
             ]);
 
-            // Step B: Create the Manager User linked to the specific Canteen ID
+            // STEP B: Grab that auto-generated ID and attach it to the new manager user record
             $user = User::create([
-                'name'       => $request->name,
-                'email'      => $request->email,
-                'password'   => Hash::make($request->password),
-                'role'       => 'manager', // Strictly forces the manager role
-                'canteen_id' => $canteen->id, // Binds them to their isolated tenant
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => 'manager',
+                'approval_status' => 'pending',           // Needs Admin approval check!
+                'canteen_id' => $canteen->id,             // <-- AUTOMATICALLY INJECTED HERE!
             ]);
 
-            // 3. Commit the data to MySQL
-            DB::commit();
+            // STEP C: Authenticate them right into their pending session portal view
+            auth()->login($user);
+        });
 
-            // 4. Redirect straight to login with a success flash message
-            return redirect('/login')->with('success', 'Application submitted successfully! Your account is pending admin approval.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->withInput()->with('error', 'Registration failed: ' . $e->getMessage());
-        }
+        // 3. Hand control off to the routing traffic cop middleware we developed earlier
+        return redirect('/dashboard')->with('status', 'Registration successful! Your application has been submitted to the university administrator for approval.');
     }
 }

@@ -28,7 +28,7 @@
                             <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'border-orange-500 text-white' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200">
                                 Canteen Approvals
                             </a>
-                            <a href="{{ route('admin.users') }}" class="{{ request()->routeIs('admin.users') ? 'border-orange-500 text-white' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200">
+                            <a href="{{ route('admin.managers') }}" class="{{ request()->routeIs('admin.managers') ? 'border-orange-500 text-white' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200">
                                 Platform Managers
                             </a>
                         </div>
