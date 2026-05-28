@@ -20,7 +20,7 @@
                 <div class="md:col-span-2">
                     <label class="block text-sm font-bold text-gray-400 mb-2">Item Name <span class="text-orange-500">*</span></label>
                     <input type="text" name="item_name" required class="w-full px-4 py-3 bg-[#1a1a21] border border-white/5 rounded-xl text-white focus:outline-none focus:border-orange-500 transition-colors">
-                </div>
+                </diPv>
 
                 <div>
                     <label class="block text-sm font-bold text-gray-400 mb-2">Category <span class="text-orange-500">*</span></label>

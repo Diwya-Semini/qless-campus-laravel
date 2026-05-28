@@ -49,7 +49,7 @@
             </p>
         </div>
 
-        <!-- CARD 4: LIVE STOCK AVAILABILITY INVENTORY METADATA -->
+        <!-- live stock availability -->
         <div class="bg-white/[0.02] border border-white/5 rounded-2xl p-6 backdrop-blur-xl shadow-lg relative overflow-hidden">
             <p class="text-gray-400 text-sm font-bold tracking-wider uppercase mb-1">Active Menu Items</p>
             <h3 class="text-3xl font-black text-white">{{ $activeMenuItems }} <span class="text-gray-500 text-lg font-medium">/ {{ $totalProducts }}</span></h3>
@@ -59,10 +59,9 @@
         </div>
     </div>
 
-    <!-- Middle Split Content Section Row: Chart & Action Panel Links -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <!-- REVENUE ANALYTICS PANEL FRAMEWORK -->
+        <!-- revenve analiytic chart -->
         <div class="lg:col-span-2 bg-white/[0.02] border border-white/5 rounded-2xl p-6 backdrop-blur-xl shadow-lg h-96 flex flex-col justify-between">
             <div class="flex justify-between items-center mb-2">
                 <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider">Weekly Revenue Stream</h3>

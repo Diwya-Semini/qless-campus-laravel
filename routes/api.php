@@ -1,22 +1,23 @@
 <?php
-use Illuminate\Http\Request;
+
+use App\Http\Controllers\Api\ApiAuthController;
+use App\Http\Controllers\Api\MobileMenuController;
+use App\Http\Controllers\Api\MobileOrderController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\CanteenController;
-use App\Http\Controllers\Api\OrderController;
-use App\Http\Controllers\Api\MenuApiController;
 
-// Public Mobile Routes
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/register', [AuthController::class, 'register']);
-Route::get('/canteens', [CanteenController::class, 'index']);
+// 1. public end api endpoints
+Route::post('/login', [ApiAuthController::class, 'login']);
 
-// The correct Menu route expecting a canteen_id
-Route::get('/canteen/{canteen_id}/menu', [MenuApiController::class, 'index']);
 
-// Secure Routes (Requires Token)
+// 2. secured end points
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', function (Request $request) { return $request->user(); });
-    Route::post('/orders', [OrderController::class, 'store']);
-    Route::get('/orders', [OrderController::class, 'index']);
+    
+    // logouts
+    Route::post('/logout', [ApiAuthController::class, 'logout']);
+    Route::post('/logout-all', [ApiAuthController::class, 'logoutAll']);
+
+    // garded end points
+    Route::get('/menu', [MobileMenuController::class, 'index']);      // <-- MUST BE INSIDE HERE
+    Route::post('/orders', [MobileOrderController::class, 'store']);   // <-- MUST BE INSIDE HERE
+
 });

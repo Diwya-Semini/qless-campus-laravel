@@ -11,58 +11,51 @@ use Illuminate\Support\Facades\Hash;
 
 class VendorRegisterController extends Controller
 {
-    /**
-     * Display the SaaS vendor onboarding form.
-     */
+    // show registration form
     public function showRegistrationForm()
     {
-        // Points to resources/views/auth/register.blade.php
         return view('auth.register'); 
     }
 
-    /**
-     * Process the vendor registration and create the multi-tenant endpoint.
-     */
+    // process registration and create a multi tenant end point
     public function register(Request $request)
     {
-        // 1. Validate the incoming form fields (No canteen_id requested from user!)
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'location' => 'required|string|max:255',       // e.g., "Malabe"
-            'canteen_name' => 'required|string|max:255',   // e.g., "Food Court"
+            'location' => 'required|string|max:255',      
+            'canteen_name' => 'required|string|max:255',   
         ]);
 
-        // 2. Wrap execution inside a transaction so nothing gets half-created if something goes wrong
+        // db transcation wrapper
         DB::transaction(function () use ($request) {
             
-            // STEP A: Create the new Canteen outlet dynamically
-            // Combining the campus location prefix for standard naming style (e.g. "SLIIT - Food Court")
+            // Create the new Canteen outlet 
             $fullCanteenName = $request->location . ' - ' . $request->canteen_name;
             
             $canteen = Canteen::create([
                 'name' => $fullCanteenName,
                 'location' => $request->location,
-                'operating_hours' => '8:00 AM - 6:00 PM', // Default operational placeholder
-                'is_open' => 0,                           // Closed until Admin validates them!
+                'operating_hours' => '8:00 AM - 6:00 PM', 
+                'is_open' => 0,                           
             ]);
 
-            // STEP B: Grab that auto-generated ID and attach it to the new manager user record
+            // get the id and attached to the manager
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'role' => 'manager',
-                'approval_status' => 'pending',           // Needs Admin approval check!
-                'canteen_id' => $canteen->id,             // <-- AUTOMATICALLY INJECTED HERE!
+                'approval_status' => 'pending',           
+                'canteen_id' => $canteen->id,             
             ]);
 
-            // STEP C: Authenticate them right into their pending session portal view
+            // authenticate them into their pending session view
             auth()->login($user);
         });
 
-        // 3. Hand control off to the routing traffic cop middleware we developed earlier
+        // Hand control off to the routing traffic cop middleware
         return redirect('/dashboard')->with('status', 'Registration successful! Your application has been submitted to the university administrator for approval.');
     }
 }

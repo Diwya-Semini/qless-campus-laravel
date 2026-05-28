@@ -9,18 +9,22 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // 1. Change the default role value seamlessly if needed
+            // 1. Safely change the default role value if needed
             $table->string('role')->default('student')->change(); 
             
-            // 2. Add the approval status column cleanly without touching canteen_id
-            $table->enum('approval_status', ['pending', 'approved', 'rejected'])->default('approved');
+            // 2. DEFENSIVE GUARD: Only try to add the column if it doesn't already exist!
+            if (! Schema::hasColumn('users', 'approval_status')) {
+                $table->enum('approval_status', ['pending', 'approved', 'rejected'])->default('approved');
+            }
         });
     }
 
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('approval_status');
+            if (Schema::hasColumn('users', 'approval_status')) {
+                $table->dropColumn('approval_status');
+            }
         });
     }
 };
