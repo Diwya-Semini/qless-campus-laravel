@@ -73,7 +73,7 @@ class MobileOrderController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
-                'status'  => 'error',
+                'status'  => 'error',     
                 'message' => 'Transaction failed. Order aborted.',
                 'error'   => $e->getMessage()
             ], 500);

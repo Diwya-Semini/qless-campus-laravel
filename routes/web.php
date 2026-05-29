@@ -7,7 +7,6 @@ use App\Http\Controllers\Web\StudentPortalController;
 use App\Http\Controllers\Auth\VendorRegisterController; 
 use App\Http\Controllers\Web\AdminController; 
 use App\Http\Controllers\Web\ManagerPortalController;
-// FIXED: Imported your admin controller sitting inside the Web folder path
 use App\Http\Controllers\Web\AdminDashboardController; 
 
 /*
@@ -19,11 +18,11 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/register', [VendorRegisterController::class, 'showRegistrationForm'])->name('register');
-Route::post('/register', [VendorRegisterController::class, 'register'])->name('register.store');
+// REMOVED THE OVERRIDE: Let Laravel Breeze/Jetstream handle the standard '/register' route for students naturally!
 
+// Clean isolation for your Canteen Manager Onboarding routes
 Route::get('/vendor/register', [VendorRegisterController::class, 'showRegistrationForm'])->name('vendor.register');
-Route::post('/vendor/onboarding', [VendorRegisterController::class, 'register']);
+Route::post('/vendor/onboarding', [VendorRegisterController::class, 'register'])->name('vendor.register.store');
 
 /*
 |--------------------------------------------------------------------------
@@ -45,7 +44,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/canteens/create', [AdminDashboardController::class, 'create'])->name('canteens.create');
         Route::post('/canteens/store', [AdminDashboardController::class, 'store'])->name('canteens.store');
         
-        // NEW: Decommission / Cancel registration route endpoint mapping
         Route::delete('/canteens/{id}/cancel', [AdminDashboardController::class, 'destroyCanteen'])->name('canteens.cancel');
 
         Route::get('/managers', [AdminDashboardController::class, 'platformManagers'])->name('managers');
@@ -59,6 +57,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     |--------------------------------------------------------------------------
     | Catches Laravel's default post-login redirect and routes the user 
     | to their specific multi-tenant workspace based on their role.
+    |
     */
     Route::get('/dashboard', function () {
         $user = auth()->user();
@@ -69,11 +68,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             if ($user->approval_status === 'pending') {
                 return redirect()->route('manager.awaiting-approval');
             } elseif ($user->approval_status === 'rejected') {
-            return redirect()->route('login')->with('error', 'Your registration request was declined.');
-        }
-        return redirect()->route('manager.dashboard');
+                auth()->logout(); // Clean logout so they aren't trapped in an infinite loop
+                return redirect()->route('login')->with('error', 'Your registration request was declined.');
+            }
+            return redirect()->route('manager.dashboard');
         } else {
-            // Default fallback for students
+            // Default fallback for verified students - lands cleanly on the menu
             return redirect()->route('student.menu'); 
         }
     })->name('dashboard');
@@ -83,6 +83,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | ROLE 2: CANTEEN VENDOR/MANAGER ROUTES
     |--------------------------------------------------------------------------
     | Isolated by 'manager' middleware to prevent student access.
+    |
     */
     Route::middleware(['manager'])->group(function () {
         Route::get('/manager/dashboard', [ManagerPortalController::class, 'dashboard'])->name('manager.dashboard');
@@ -97,6 +98,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'update' => 'manager.menu.update',
             'destroy' => 'manager.menu.destroy',
         ]);
+        
         Route::get('/manager/awaiting-approval', function () {
             return view('canteen_manager.awaiting-approval');
         })->name('manager.awaiting-approval');
@@ -107,6 +109,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | ROLE 3: STUDENT PORTAL ROUTES
     |--------------------------------------------------------------------------
     | Mobile-responsive browser ordering interface maps.
+    |
     */
     Route::middleware(['student'])->group(function () {
         // 1. Menu views

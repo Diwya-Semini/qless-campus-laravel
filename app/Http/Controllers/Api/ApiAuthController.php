@@ -9,13 +9,13 @@ use Illuminate\Support\Facades\Hash;
 
 class ApiAuthController extends Controller
 {
-    // secure login with sanctum ability scopes 
+    // secure login
     public function login(Request $request)
     {
         $request->validate([
             'email'       => 'required|email',
             'password'    => 'required',
-            'device_name' => 'required|string', // Track what device logged in 
+            'device_name' => 'required|string', 
         ]);
 
         $user = User::where('email', $request->email)->first();
@@ -36,7 +36,7 @@ class ApiAuthController extends Controller
             ], 403);
         }
 
-        // 3. Token Scopes: Embed strict limitations directly into the digital keycard
+        // 3. strict limitations directly into the digital keycard
         $abilities = ['menu:view', 'orders:create', 'profile:update'];
 
         // 4. creates the secure token with device tracking signatures
@@ -45,7 +45,7 @@ class ApiAuthController extends Controller
         return response()->json([
             'status'  => 'success',
             'message' => 'Secure API handshake established.',
-            'token'   => $token, // session token
+            'token'   => $token, 
             'user'    => [
                 'id'         => $user->id,
                 'name'       => $user->name,

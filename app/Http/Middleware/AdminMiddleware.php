@@ -14,8 +14,7 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // 1. Check if the user is actually logged in
-        // 2. Check if their database role is specifically 'admin'
+        // Check if their database role is specifically 'admin'
         if (Auth::check() && Auth::user()->role === 'admin') {
             return $next($request); // Let them through to the dashboard!
         }

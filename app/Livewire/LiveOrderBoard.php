@@ -9,13 +9,12 @@ use Illuminate\Support\Facades\Auth;
 
 class LiveOrderBoard extends Component
 {
-    // Variables for the OTP Popup
     public $showOtpModal = false;
     public $verifyingOrderId = null;
     public $enteredOtp = '';
     public $otpError = '';
 
-    // Standard status update (Pending -> Preparing -> Packing)
+    // Standard status update
     public function updateOrderStatus($orderId, $newStatus)
     {
         $order = Order::find($orderId);
@@ -24,7 +23,7 @@ class LiveOrderBoard extends Component
         }
     }
 
-    // 1. Opens the popup when they click "Hand to Student"
+    // 1. Opens the popup when click "Hand to Student"
     public function promptOtp($orderId)
     {
         $this->verifyingOrderId = $orderId;
@@ -40,7 +39,7 @@ class LiveOrderBoard extends Component
         $this->verifyingOrderId = null;
     }
 
-    // 3. Verifies the code!
+    // 3. Verifies the code
     public function verifyAndComplete()
     {
         $order = Order::find($this->verifyingOrderId);
@@ -48,7 +47,6 @@ class LiveOrderBoard extends Component
         // Check if the typed OTP matches the database
         if ($order && $order->otp === $this->enteredOtp) {
             
-            // 1. Mark the order as complete in the database
             $order->update(['status' => 'completed']);
             
             \App\Jobs\SendOrderReceipt::dispatch($order);

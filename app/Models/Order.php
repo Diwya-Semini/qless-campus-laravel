@@ -14,7 +14,6 @@ class Order extends Model
         'otp'
     ];
 
-    // Ensure the order can find the student user record
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');

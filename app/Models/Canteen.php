@@ -9,7 +9,6 @@ class Canteen extends Model
 {
     use HasFactory;
 
-    // Updated to match your exact database columns
     protected $fillable = [
         'name',
         'location',

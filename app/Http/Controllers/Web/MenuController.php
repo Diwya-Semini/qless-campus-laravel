@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class MenuController extends Controller
 {
+    // 1. show menu items
     public function index()
     {
         $manager = Auth::user();
@@ -19,11 +20,13 @@ class MenuController extends Controller
         return view('canteen_manager.menu.index', compact('menuItems'));
     }
 
+    // 2.create new item
     public function create()
     {
         return view('canteen_manager.menu.create');
     }
 
+    // 3.store it into the database 
     public function store(Request $request)
     {
         $request->validate([
@@ -31,7 +34,7 @@ class MenuController extends Controller
             'category' => 'required|string',
             'price' => 'required|numeric|min:0',
             'description' => 'nullable|string',
-            'image_url' => 'nullable|string', // Changed to image_url
+            'image_url' => 'nullable|string', 
         ]);
 
         $data = $request->all();
@@ -43,12 +46,14 @@ class MenuController extends Controller
         return redirect()->route('manager.menu')->with('success', 'Menu item added successfully!');
     }
 
+    // 4.edit product
     public function edit($id)
     {
         $menuItem = Product::where('canteen_id', Auth::user()->canteen_id)->findOrFail($id);
         return view('canteen_manager.menu.edit', compact('menuItem'));
     }
 
+    // 5.update product
     public function update(Request $request, $id)
     {
         $menuItem = Product::where('canteen_id', Auth::user()->canteen_id)->findOrFail($id);
@@ -58,7 +63,7 @@ class MenuController extends Controller
             'category' => 'required|string',
             'price' => 'required|numeric|min:0',
             'description' => 'nullable|string',
-            'image_url' => 'nullable|string', // Changed to image_url
+            'image_url' => 'nullable|string',
         ]);
 
         $data = $request->all();
@@ -69,6 +74,7 @@ class MenuController extends Controller
         return redirect()->route('manager.menu')->with('success', 'Menu item updated successfully!');
     }
 
+    // 6.delete product
     public function destroy($id)
     {
         $menuItem = Product::where('canteen_id', Auth::user()->canteen_id)->findOrFail($id);

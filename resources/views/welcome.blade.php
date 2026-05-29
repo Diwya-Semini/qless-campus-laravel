@@ -55,7 +55,7 @@
             
             <div class="lg:col-span-7 space-y-6 text-center lg:text-left">
                 <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-bold tracking-wide uppercase">
-                    🚀 Intelligent Multi-Tenant Dining Architecture
+                    Intelligent Multi-Tenant Dining Architecture
                 </div>
                 <h1 class="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-[1.1]">
                     Ditch the wait.<br>
@@ -66,9 +66,6 @@
                 </p>
                 
                 <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
-                    <a href="{{ route('login') }}" class="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold text-sm px-8 py-4 rounded-xl shadow-xl shadow-orange-500/10 transition duration-200 text-center transform hover:-translate-y-0.5">
-                        Launch Student Portal
-                    </a>
                     <a href="{{ route('vendor.register') }}" class="w-full sm:w-auto bg-white/[0.02] hover:bg-white/[0.05] border border-white/10 text-white font-bold text-sm px-8 py-4 rounded-xl backdrop-blur-md transition duration-200 text-center transform hover:-translate-y-0.5">
                         Register Canteen Facility
                     </a>

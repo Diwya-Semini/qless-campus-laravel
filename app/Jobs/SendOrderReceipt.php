@@ -17,12 +17,10 @@ class SendOrderReceipt implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    // Change this to store just the raw order ID, avoiding database model serialization traps
     protected $orderId;
 
     public function __construct($order)
     {
-        // Accept either the object or the ID safely
         $this->orderId = is_object($order) ? $order->id : $order;
     }
 

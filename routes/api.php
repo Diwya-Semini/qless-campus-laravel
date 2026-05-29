@@ -17,7 +17,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout-all', [ApiAuthController::class, 'logoutAll']);
 
     // garded end points
-    Route::get('/menu', [MobileMenuController::class, 'index']);      // <-- MUST BE INSIDE HERE
-    Route::post('/orders', [MobileOrderController::class, 'store']);   // <-- MUST BE INSIDE HERE
+    Route::get('/menu', [MobileMenuController::class, 'index']);      
+    Route::post('/orders', [MobileOrderController::class, 'store']);   
 
 });

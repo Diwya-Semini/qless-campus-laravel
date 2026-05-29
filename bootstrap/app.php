@@ -11,13 +11,13 @@ use App\Http\Middleware\StudentMiddleware;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php', // <-- 1. CRITICAL: Ensure this points to the exact file!
+        api: __DIR__.'/../routes/api.php', 
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
         
-        // 2. Register your custom app role aliases
+        // Register custom app role aliases
         $middleware->alias([
             'admin'   => AdminMiddleware::class,
             'manager' => ManagerMiddleware::class,

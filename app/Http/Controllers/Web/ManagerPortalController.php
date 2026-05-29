@@ -15,22 +15,20 @@ class ManagerPortalController extends Controller
         $user = auth()->user();
         $canteenId = $user->canteen_id; 
 
-        // 1. Calculate Core Numeric Indicators
         $totalOrdersToday = Order::where('canteen_id', $canteenId)->whereDate('created_at', Carbon::today())->count();
         
-        // FIXED: Changed 'total_price' to 'total_amount' (or your exact column name)
         $totalRevenueToday = Order::where('canteen_id', $canteenId)->whereDate('created_at', Carbon::today())->sum('total_amount');
         
         $totalProducts = Product::where('canteen_id', $canteenId)->count();
         $activeMenuItems = Product::where('canteen_id', $canteenId)->where('is_available', 1)->count();
         $outOfStockItems = Product::where('canteen_id', $canteenId)->where('is_available', 0)->count();
 
-        // 2. Fetch Weekly Revenue Analytics Loop (Past 7 Days)
+        // 1. Fetch Weekly Revenue (Past 7 Days)
         $weeklyData = Order::where('canteen_id', $canteenId)
             ->where('created_at', '>=', Carbon::now()->subDays(6)->startOfDay())
             ->select(
                 DB::raw("DATE_FORMAT(created_at, '%Y-%m-%d') as date"),
-                DB::raw('SUM(total_amount) as revenue') // FIXED: Changed 'total_price' to 'total_amount' here too
+                DB::raw('SUM(total_amount) as revenue') 
             )
             ->groupBy('date')
             ->orderBy('date', 'ASC')
@@ -38,7 +36,7 @@ class ManagerPortalController extends Controller
             ->pluck('revenue', 'date')
             ->toArray();
 
-        // 3. Build Ordered Alignment Matrices for Frontend Injection
+        // 2. Build Ordered Alignment Matrices for Frontend Injection
         $chartLabels = [];
         $chartValues = [];
 

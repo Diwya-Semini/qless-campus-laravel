@@ -23,7 +23,6 @@ class Product extends Model
         'isAvailable' => 'boolean',
     ];
 
-    // Magic Translator: Lets the frontend use capital 'A' without breaking the database
     public function getIsAvailableAttribute()
     {
         return $this->attributes['is_available'];

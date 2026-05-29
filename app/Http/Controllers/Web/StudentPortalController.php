@@ -17,50 +17,46 @@ class StudentPortalController extends Controller
         return $this->menu();
     }
     
-    // Direct access to their assigned Canteen Menu
+    // 1.redirect to assigned canten
     public function menu(Request $request)
     {
         $user = auth()->user();
         
-        // 1. Start the base query: Only get available food for THIS student's campus
+        // get available food 
         $query = Product::where('canteen_id', $user->canteen_id)
                         ->where('is_available', 1);
 
-        // 2. Apply Search Filter (if they typed something)
+        // Search Filter 
         if ($request->filled('search')) {
             $query->where('item_name', 'LIKE', '%' . $request->search . '%');
         }
 
-        // 3. Apply Category Filter (if they clicked a filter pill)
+        //  Category Filter 
         if ($request->filled('category') && $request->category !== 'All') {
             $query->where('category', $request->category);
         }
 
-        // 4. Finally, fetch the filtered results from the database
+        // Finally, fetch the filtered results from the database
         $products = $query->get();
         
-        // Count items in cart for the floating bar
         $itemCount = collect(session()->get('cart', []))->sum('quantity');
 
-        // Pass the current filters back to the view so the UI remembers what was clicked
         $currentCategory = $request->category ?? 'All';
         $currentSearch = $request->search ?? '';
 
         return view('student.menu', compact('products', 'itemCount', 'currentCategory', 'currentSearch'));
     }
 
-    // add cart to session cart
-    // 1. ADD TO SESSION CART (No Database yet!)
+    // 2. add cart to session cart
     public function addToCart(Request $request, $id)
     {
         $product = Product::findOrFail($id);
         $cart = session()->get('cart', []);
 
-        // If item is already in cart, just add to the quantity
+        // if item is already in cart, just add to the quantity
         if(isset($cart[$id])) {
             $cart[$id]['quantity']++;
         } else {
-            // Otherwise, add the new item
             $cart[$id] = [
                 "name" => $product->item_name,
                 "quantity" => 1,
@@ -73,15 +69,14 @@ class StudentPortalController extends Controller
         return redirect()->back()->with('success', $product->item_name . ' added to your cart!');
     }
 
-    // 2. VIEW THE CART PAGE
+    // 3. view cart item page
     public function viewCart()
     {
         $cart = session()->get('cart', []);
         return view('student.cart', compact('cart'));
     }
 
-    // 3. THE FINAL CHECKOUT
-    // 3. THE FINAL CHECKOUT (Fixed to securely write the OTP into the DB)
+    // 4. final check out
     public function checkout(Request $request)
     {
         $cart = session()->get('cart');
@@ -97,16 +92,14 @@ class StudentPortalController extends Controller
 
         // Database Transaction
         DB::transaction(function () use ($cart, $user, $totalAmount) {
-            // Create the Order with a generated 4-digit PIN code
             $order = Order::create([
                 'user_id' => $user->id,
                 'canteen_id' => $user->canteen_id,
                 'total_amount' => $totalAmount,
                 'status' => 'pending',
-                'otp' => rand(1000, 9999) // <-- FIXED: Generates and stores the numeric PIN directly!
+                'otp' => rand(1000, 9999) 
             ]);
 
-            // Create the Order Items
             foreach($cart as $id => $item) {
                 OrderItem::create([
                     'order_id' => $order->id,
@@ -120,26 +113,20 @@ class StudentPortalController extends Controller
         // Clear the session cart after a successful transaction database entry
         session()->forget('cart');
         
-        // Redirect the student straight to their active tracking screen summary card list
         return redirect()->route('student.orders')->with('success', 'Order sent to the kitchen!');
     }
 
     
-    // show order history and live ticket
-    // 4. VIEW ORDER HISTORY
-    // 4. VIEW ORDER HISTORY
-    // 4. VIEW ORDER HISTORY
+    // 5. show order history and live ticket
     public function history()
     {
         $user = auth()->user();
 
-        // Fetch all orders for this specific student, including the items and related products
         $orders = Order::with(['items.product'])
                        ->where('user_id', $user->id)
                        ->orderBy('created_at', 'desc')
                        ->get();
 
-        // Point to your exact file: resources/views/student/orders.blade.php
         return view('student.orders', compact('orders'));
     }
 

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 class StudentMenu extends Component
 {
     public $cart = [];
-    public $canteenId = 2; // Set to 2 to match your exact database tables!
+    public $canteenId = 2;
     public $generatedOtp = null;
 
     public function addToCart($productId)
@@ -31,7 +31,6 @@ class StudentMenu extends Component
             ];
         }
         
-        // Hide previous OTP notification box if they start a new basket session
         $this->generatedOtp = null;
     }
 
@@ -59,13 +58,13 @@ class StudentMenu extends Component
     {
         if (empty($this->cart)) return;
 
-        // 1. Generate a secure random 4-digit PIN code
+        // 1. Generate a secure random otp
         $otp = rand(1000, 9999);
 
         // 2. Create parent entry in orders table
         $order = Order::create([
             'user_id' => Auth::id(),
-            'canteen_id' => $this->canteenId, // Saved as 2
+            'canteen_id' => $this->canteenId, 
             'total_amount' => $this->total,
             'status' => 'pending',
             'otp' => $otp,
@@ -77,7 +76,7 @@ class StudentMenu extends Component
                 'order_id' => $order->id,
                 'product_id' => $item['id'],
                 'quantity' => $item['quantity'],
-                'price_at_time' => $item['price'], // Handles price records securely
+                'price_at_time' => $item['price'], 
             ]);
         }
 
@@ -90,7 +89,7 @@ class StudentMenu extends Component
 
     public function render()
     {
-        // Pull only products belonging to canteen_id = 2 that are marked active
+        // Pull only products belonging to canteen_id that are marked active
         $products = Product::where('is_available', 1)
                            ->where('canteen_id', $this->canteenId)
                            ->get();
@@ -101,13 +100,12 @@ class StudentMenu extends Component
     public function history()
     {
         // 1. Fetch only the authenticated student's orders
-        // 2. Eager load items and products to avoid template relationship errors
         $orders = Order::where('user_id', Auth::id())
                        ->with(['items.product'])
                        ->orderBy('created_at', 'desc')
                        ->get();
 
-        // 3. Compact 'orders' to match your Blade view variable names exactly
+        // 2. Compact 'orders' to match Blade view variable names exactly
         return view('student.orders.history', compact('orders'));
     }
 }

@@ -33,7 +33,7 @@ class DashboardController extends Controller
         $completedOrders = Order::with(['user', 'items.product'])
             ->whereIn('status', ['ready', 'completed'])
             ->orderBy('updated_at', 'desc')
-            ->paginate(15); // Splits pages cleanly if you have lots of orders
+            ->paginate(15); 
 
         return view('canteen_manager.history', compact('completedOrders'));
     }
